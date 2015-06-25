@@ -48,6 +48,7 @@ void test_1(void)
     std::cout << "exit" <<std::endl;
 }
 
+char test_val ;
 void test_2(void)
 {
     std::set_terminate(terminate_handler);
@@ -58,13 +59,15 @@ void test_2(void)
     pthread->detach();
     pthread_2->detach();
 
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    std::this_thread::sleep_for(std::chrono::seconds(15));
+
     delete pthread;
     delete pthread_2;
 
     std::cout << "exit" <<std::endl;
 
-    std::this_thread::sleep_for(std::chrono::seconds(15));
+    //pthread_exit( &test_val);
+    //std::this_thread::sleep_for(std::chrono::seconds(15));
 }
 
 std::mutex iomutex;
@@ -102,26 +105,24 @@ void function_4(int num)
 
 void test_3(void)
 {
-  std::thread *pthread = new std::thread(function_3,1);
-  std::thread *pthread_2 = new std::thread(function_4,2);
+  std::vector<std::thread*> thr_vec;
 
-  pthread->detach();
-  pthread_2->detach();
+  auto num_thread = 50;
 
-  std::this_thread::sleep_for(std::chrono::seconds(15));
+  for ( auto i = 0 ; i < num_thread; i++ ) {
+      std::thread *tptr = new std::thread(function_3,i);
+      thr_vec.push_back(tptr);
+  }
 
-  delete pthread;
-  delete pthread_2;
+  for ( auto i = 0 ; i < thr_vec.size(); i++ ) {
+      thr_vec[i]->detach();
+  }
 
-  {
-    int num = 0;
-    sched_param sch;
-    int policy; 
-    pthread_getschedparam(pthread_self(), &policy, &sch);
-    std::lock_guard<std::mutex> lk(iomutex);
-    std::cout << "Thread " << num << " is executing at priority "
-      << sch.sched_priority << '\n';
-  } 
+  std::this_thread::sleep_for(std::chrono::seconds(5));
+
+  for ( auto i = 0 ; i < thr_vec.size(); i++ ) {
+     delete thr_vec[i];
+  }
 
   std::cout << "exit" <<std::endl;
 }
@@ -239,6 +240,6 @@ int main (int argc , char * argv[])
 {
   //test_1();
   //test_2();
-  //test_3();
-  test_4();
+  test_3();
+  //test_4();
 }
